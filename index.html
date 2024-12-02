@@ -1,141 +1,497 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>VR Bosi</title>
-    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/mayognaise/aframe-gif-shader@master/dist/aframe-gif-shader.min.js"></script>
+    <title>VR CREA</title>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
     <style>
-      #startButton {
+      /* Ocultamos el canvas de Three.js inicialmente */
+      canvas {
+        display: none;
+      }
+
+      /* Estilos para el botón e imagen */
+      #instructionsImage {
         position: absolute;
-        top: 50%;
+        top: 5%;
         left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 9999;
-        padding: 10px 20px;
-        font-size: 18px;
+        transform: translateX(-50%);
+        max-width: 80%;
+        max-height: 70%;
+        display: block;
+      }
+
+      #initButton {
+        position: absolute;
+        bottom: 10%; /* Posiciona el botón debajo de la imagen */
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 20px 50px; /* Botón más grande */
+        font-size: 22px; /* Texto más grande */
+        background-color: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+        border-radius: 10px;
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+        transition: background-color 0.3s, transform 0.2s;
+      }
+
+      #initButton:hover {
+        background-color: #0056b3;
+        transform: translateX(-50%) scale(1.05); /* Efecto hover */
+      }
+
+      #initButton:active {
+        background-color: #004494;
+        transform: translateX(-50%) scale(0.98); /* Efecto al hacer click */
+      }
+
+      /* Responsivo para pantallas más pequeñas */
+      @media (max-width: 768px) {
+        #instructionsImage {
+          max-width: 90%; /* Imagen más pequeña en pantallas pequeñas */
+        }
+        #initButton {
+          font-size: 18px; /* Botón un poco más pequeño en pantallas pequeñas */
+          padding: 15px 40px;
+        }
       }
     </style>
   </head>
-
   <body>
-    <button id="startButton" onclick="startVR()">Continuar</button>
+    <div id="container"></div>
+    <!-- Botón para iniciar la aplicación Three.js -->
+    <button id="initButton">Iniciar Aplicación</button>
 
-    <a-scene id="vrScene" style="display: none" vr-mode-ui="enabled: true">
-      <a-assets>
-        <img id="skyTexture" src="./img/bosibig.png" crossorigin="anonymous" />
-        <!-- <a-asset-item id="person" src="./3d/scene.gltf"></a-asset-item> -->
-        <a-asset-item id="person1" src="./3d/scene.gltf"></a-asset-item>
-        <a-asset-item id="client" src="./3d/Walking.fbx"></a-asset-item>
-      </a-assets>
-
-      <a-sky src="" phi-start="0" phi-length="360" theta-start="0" theta-length="180" radius="5000" segments-height="64" segments-width="64"></a-sky>
-      
-      <a-box id="tab" class=""position="0 1 -5"width="5"height="5"depth="0.2"color="white"></a-box>
-      <a-box id="evento1" class="collidable"position="0 2 -3"width="0.9"height="0.3"depth="0.2"color="red">
-        <a-text value="Iniciar" position="0 0 0.1" align="center" color="black" width="4" ></a-text>
-      </a-box>
-      
-      <a-box id="grabar"class=""position="-1 1 -3"width="0.9"height="0.3"depth="0.2"color="red"visible="false">
-        <a-text value="Grabar" position="0 0 0.1" align="center" color="black" width="4" visible="false"></a-text>
-      </a-box>
-      
-      <a-box id="stop"class=""position="0 1 -3"width="0.9"height="0.3"depth="0.2"color="red"visible="false">
-        <a-text value="Detener" position="0 0 0.1" align="center" color="black" width="4" visible="false"></a-text>
-      </a-box>
-
-      <a-box id="transcribir"class=""position="1 1 -3"width="0.9"height="0.3"depth="0.2"color="red"visible="false">
-        <a-text value="Enviar" position="0 0 0.1" align="center" color="black" width="4" visible="false"></a-text>
-      </a-box>
-
-      <a-box id="resultado"class=""position="0 0.2 -3"width="1.8"height="0.3"depth="0.2"color="red"visible="false">
-        <a-text value="Resultado" position="0 0 0.1" align="center" color="black" width="4" visible="false"></a-text>
-      </a-box>
-
-      <!-- <a-entity geometry="primitive:plane;" material="shader:gif;src:url(./img/gif4-1.gif);opacity:0.9;" position ="1 0 0.5"></a-entity> -->
-
-      <!-- <a-entity id="cliente" gltf-model="#person1" scale ="3 3 3" position="10 0 -2" rotation="0 -90 0"visible="false"></a-entity>  -->
-
-      <!-- <a-entity gltf-model="#person1" position="0 0 0" scale="3 3 3" animation="property: position; to: 50 0 -5; dur: 3000; easing: easeInOutQuad; loop: false"> </a-entity> -->
-
-      <a-camera>
-        <a-cursor raycaster="objects: .collidable"></a-cursor>
-      </a-camera>
-    </a-scene>
-
-    <script>
-      let mediaRecorder;
-      let modelo = document.getElementById('cliente');
-      let evento1Button = document.getElementById("evento1");
-      let grabarButton = document.getElementById("grabar");
-      let stopButton = document.getElementById("stop");
-      let resultadoText = document.querySelector('a-box#resultado a-text');
-
-      let transcribirButton = document.getElementById("transcribir");
-
-      function startVR() {
-        document.getElementById("vrScene").style.display = "block";
-        document.getElementById("startButton").style.display = "none"; 
+    <!-- Imagen de instrucciones -->
+    <img
+      id="instructionsImage"
+      src="./imgs/instrucciones-bosi.jpg"
+      alt="Instrucciones de uso"
+    />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/"
+        }
       }
+    </script>
 
-      window.addEventListener("load", function () {
-        var sky = document.querySelector("a-sky");
-        var img = new Image();
-        img.onload = function () {
-          sky.setAttribute("src", img.src);
-        };
-        img.src = "./img/fondoWS.png";
-      });
+    <script type="module">
+      import * as THREE from "three";
+      import { VRButton } from "three/addons/webxr/VRButton.js";
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+      import { FontLoader } from "three/addons/loaders/FontLoader.js";
+      import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
+      import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
+      import { AnimationMixer, Clock } from "three";
 
-      function moverModelo3D() {
-        
-        modelo.setAttribute('animation', {
-          property: 'position',
-          to: '3 0 -2', // Posición final
-          dur: 7000, // Duración en milisegundos
-          easing: 'linear'
+      let scene,
+        camera,
+        renderer,
+        controls,
+        textureLoader,
+        reticle,
+        raycaster,
+        intersectedObject,
+        fbxLoader;
+      let mixer, clock;
+      const container = document.getElementById("container");
+      let startBtn, fontLoader, recordBtn, stopRecordBtn, sendBtn, infoBtn;
+      let startTxt, recordTxt, stopRecordTxt, sendTxt, infoTxt;
+      let isLookingAtButton = false;
+      let lookTimer = null;
+      let currentIntersected = null;
+      let stream;
+      let score=100, intentos=3, intentosCorrectos=0;
+
+      let mediaRecorder,
+        audioChunks = [];
+
+      const listener = new THREE.AudioListener();
+      const audioLoader = new THREE.AudioLoader();
+      const music = new THREE.Audio(listener);
+
+      function init() {
+        // document.querySelector("canvas").style.display = "block";
+        clock = new THREE.Clock();
+        // Crear escena
+        scene = new THREE.Scene();
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+        scene.add(ambientLight);
+
+        // Crear cámara
+        camera = new THREE.PerspectiveCamera(
+          75,
+          window.innerWidth / window.innerHeight,
+          0.1,
+          1000
+        );
+        camera.position.set(0, 0, 0.1);
+
+        camera.add(listener);
+        audioLoader.load('./audios/musica/07 - Bright - Alelo-IcoS.mp3', function(buffer) {
+          music.setBuffer(buffer);
+          music.setLoop(true);
+          music.setVolume(0.08);
+          music.play();
         });
-        console.log("Animación iniciada");
 
-        // modelo.addEventListener('animationcomplete', function () {
-        //   reproducirAudio('./audios/Crea3.mp3'); // Llamamos a la función de audio
-        // });
+        loadFBXModel();
+
+        // Crear renderizador
+        renderer = new THREE.WebGLRenderer();
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.xr.enabled = true; // Habilitar VR
+        renderer.xr.setReferenceSpaceType("local");
+        renderer.setAnimationLoop(animate);
+        document.body.appendChild(renderer.domElement);
+
+        //CONTROLS
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableZoom = false;
+        controls.enablePan = false;
+
+        //CURSOR
+        const cursorGeometry = new THREE.RingGeometry(0.01, 0.02, 32);
+        const cursorMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        reticle = new THREE.Mesh(cursorGeometry, cursorMaterial);
+        scene.add(reticle);
+
+        // Cargar imagen 360
+        textureLoader = new THREE.TextureLoader();
+        const texture = textureLoader.load("./imgs/bosi4k.png");
+        const sphereGeometry = new THREE.SphereGeometry(1000, 60, 40);
+        const sphereMaterial = new THREE.MeshBasicMaterial({
+          map: texture,
+          side: THREE.DoubleSide,
+        });
+        const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        sphere.rotation.set(0,Math.PI/2,0);
+        sphere.scale.x = -1;
+        scene.add(sphere);
+
+        //Cargar Boton Iniciar
+        const buttonGeometry = new THREE.BoxGeometry(0.3, 0.07, 0.05);
+        const buttonMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        startBtn = new THREE.Mesh(buttonGeometry, buttonMaterial);
+        startBtn.position.set(0, 0.1, -1); // Colocar el botón en frente de la cámara
+        startBtn.rotation.set(0, 0, 0);
+        scene.add(startBtn);
+
+        // Cargar texto "Iniciar" encima del botón
+        fontLoader = new FontLoader();
+        fontLoader.load(
+          "https://threejs.org/examples/fonts/helvetiker_regular.typeface.json",
+          function (font) {
+            const textGeometry = new TextGeometry("Iniciar", {
+              font: font,
+              size: 0.05,
+              height: 0.01,
+            });
+            const textMaterial = new THREE.MeshBasicMaterial({
+              color: 0xffffff,
+            });
+            startTxt = new THREE.Mesh(textGeometry, textMaterial);
+            startTxt.position.set(-0.1, 0.07, -0.95); // Ajustar posición para centrar sobre el botón
+            startTxt.rotation.set(0, 0, 0);
+            scene.add(startTxt);
+          }
+        );
+
+        // Raycaster para detección de colisiones
+        raycaster = new THREE.Raycaster();
+
+        // Habilitar VR
+        document.body.appendChild(VRButton.createButton(renderer));
+
+        // Ajustar tamaño de ventana al redimensionar
+        window.addEventListener("resize", onWindowResize, false);
+
+        // Ocultar permanentemente el botón y la imagen de instrucciones
+        document.getElementById("initButton").style.display = "none";
+        document.getElementById("instructionsImage").style.display = "none";
       }
 
-      function reproducirAudio() {
-        // let audio = new Audio(urlAudio);
-        // audio.play();
+      function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
 
-         // Reproducir el primer audio (Crea1)
-        let audio1 = new Audio('./audios/Crea1.mp3');
-        audio1.play();
+      function loadFBXModel() {
+        //Cargar Modelo 3D
+        fbxLoader = new FBXLoader();
+        fbxLoader.load("./3d/tablet2.fbx", (fbx) => {
+          // Escalar y posicionar la tableta detrás de los botones
+          fbx.scale.set(0.2, 0.2, 0.2); // Ajustar el tamaño del modelo
+          fbx.rotation.set(Math.PI/2, Math.PI, 0); //
+          fbx.position.set(0, -0.1, -1.3); // Posicionar la tableta detrás de los botones
+          // Inicializar el AnimationMixer para controlar la animación
+          mixer = new THREE.AnimationMixer(fbx);
+          // Obtener la primera animación del modelo
+          // const action = mixer.clipAction(fbx.animations[0]);
+          // action.play(); // Reproducir la animación
+          scene.add(fbx);
+        });
+      }
+
+      function animate() {
+        // const delta = clock.getDelta();
+        // if (mixer) mixer.update(delta);
+        controls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
+        const xrCamera = renderer.xr.isPresenting
+          ? renderer.xr.getCamera(camera)
+          : camera;
+
+        // Actualizar posición y orientación del retículo en función de la cámara VR
+        reticle.position.copy(xrCamera.position); // Poner el retículo en la posición de la cámara
+        const cameraDirection = new THREE.Vector3();
+        xrCamera.getWorldDirection(cameraDirection); // Obtener la dirección a la que apunta la cámara
+        reticle.position.add(cameraDirection.multiplyScalar(1)); // Colocar el retículo 1 unidad frente a la cámara
+        reticle.lookAt(xrCamera.position);
+
+        raycaster.setFromCamera(new THREE.Vector2(0, 0), xrCamera); // Retícula siempre al centro
+        const intersects = raycaster.intersectObjects(
+          [startBtn, recordBtn, stopRecordBtn, sendBtn].filter(Boolean)
+        );
+
+        if (intersects.length > 0) {
+          if (currentIntersected !== intersects[0].object && intersects[0].object.visible==true){
+            currentIntersected = intersects[0].object;
+            clearTimeout(lookTimer); // Resetear el temporizador cuando se enfoca otro objeto
+            startInteractionTimer(currentIntersected);
+          }
+        } else {
+          clearTimeout(lookTimer); // Cancelar el temporizador si no está mirando ningún botón
+          currentIntersected = null;
+        }
+
+        render();
+      }
+
+      function startInteractionTimer(button) {
+        isLookingAtButton = true;
+
+        // Iniciar un temporizador de 2 segundos
+        lookTimer = setTimeout(() => {
+          if (button === startBtn) {
+            playAudio();
+          } else if (button === recordBtn) {
+            grabar();
+          } else if (button === stopRecordBtn) {
+            detener();
+          } else if (button === sendBtn) {
+            transcribir();
+          }
+        }, 2000);
+      }
+
+      function showButtons() {
+        console.log("Botón Iniciar activado!");
+
+        // Crear otros dos botones visibles
+        recordBtn = new THREE.Mesh(
+          new THREE.BoxGeometry(0.3, 0.07, 0.05),
+          new THREE.MeshBasicMaterial({ color: 0xff0000 })
+        );
+        recordBtn.position.set(-0.4, -0.1, -1);
+        recordBtn.rotation.set(0, 0, 0);
+        scene.add(recordBtn);
+
+        stopRecordBtn = new THREE.Mesh(
+          new THREE.BoxGeometry(0.3, 0.07, 0.05),
+          new THREE.MeshBasicMaterial({ color: 0xff0000 })
+        );
+        stopRecordBtn.position.set(0, -0.1, -1);
+        stopRecordBtn.rotation.set(0, 0, 0);
+        scene.add(stopRecordBtn);
+
+        infoBtn = new THREE.Mesh(
+          new THREE.BoxGeometry(0.7, 0.07, 0.05),
+          new THREE.MeshBasicMaterial({ color: 0xff0000 })
+        );
+        infoBtn.position.set(0, -0.2, -1);
+        infoBtn.rotation.set(0, 0, 0);
+        scene.add(infoBtn);
+
+        fontLoader.load(
+          "https://threejs.org/examples/fonts/helvetiker_regular.typeface.json",
+          function (font) {
+            const textGeometry = new TextGeometry("Grabar", {
+              font: font,
+              size: 0.05,
+              height: 0.01,
+            });
+            const textMaterial = new THREE.MeshBasicMaterial({
+              color: 0xffffff,
+            });
+            recordTxt = new THREE.Mesh(textGeometry, textMaterial);
+            recordTxt.position.set(-0.5, -0.12, -0.95);
+            recordTxt.rotation.set(0, -0, 0);
+            scene.add(recordTxt);
+          }
+        );
+
+        fontLoader.load(
+          "https://threejs.org/examples/fonts/helvetiker_regular.typeface.json",
+          function (font) {
+            const textGeometry = new TextGeometry("Detener", {
+              font: font,
+              size: 0.05,
+              height: 0.01,
+            });
+            const textMaterial = new THREE.MeshBasicMaterial({
+              color: 0xffffff,
+            });
+            stopRecordTxt = new THREE.Mesh(textGeometry, textMaterial);
+            stopRecordTxt.position.set(-0.13, -0.12, -0.95);
+            stopRecordTxt.rotation.set(0, -0, 0);
+            scene.add(stopRecordTxt);
+          }
+        );
+        // createText("Informacion", -0.2,-0.22,-0.95, (textMesh) => {
+        //   infoTxt = textMesh; // Guardar referencia
+        //   scene.add(infoTxt);
+        // });
+        updateInfoText("Informacion");
+      }
+
+      function showSendButton() {
+        sendBtn = new THREE.Mesh(
+          new THREE.BoxGeometry(0.3, 0.07, 0.05),
+          new THREE.MeshBasicMaterial({ color: 0xff0000 })
+        );
+        sendBtn.position.set(0.4, -0.1, -1);
+        sendBtn.rotation.set(0, -0, 0);
+        scene.add(sendBtn);
+
+        fontLoader.load(
+          "https://threejs.org/examples/fonts/helvetiker_regular.typeface.json",
+          function (font) {
+            const textGeometry = new TextGeometry("Enviar", {
+              font: font,
+              size: 0.05,
+              height: 0.01,
+            });
+            const textMaterial = new THREE.MeshBasicMaterial({
+              color: 0xffffff,
+            });
+            sendTxt = new THREE.Mesh(textGeometry, textMaterial);
+            sendTxt.position.set(0.3, -0.12, -0.95);
+            sendTxt.rotation.set(0, 0, 0);
+            scene.add(sendTxt);
+          }
+        );
+      }
+      function createText(text, x, y, z, callback) {
+        fontLoader.load(
+          "https://threejs.org/examples/fonts/helvetiker_regular.typeface.json",
+          function (font) {
+            const textGeometry = new TextGeometry(text, {
+              font: font,
+              size: 0.05,
+              height: 0.01,
+            });
+            const textMaterial = new THREE.MeshBasicMaterial({
+              color: 0xffffff,
+            });
+            infoTxt = new THREE.Mesh(textGeometry, textMaterial);
+            infoTxt.position.set(x, y, z);
+            infoTxt.rotation.set(0, 0, 0);
+
+            callback(infoTxt); // Ejecutar el callback con el texto creado
+          }
+        );
+      }
+
+      // Función para actualizar el texto de infoBtn
+      function updateInfoText(newText) {
+        // Eliminar el texto anterior de la escena
+        if (infoTxt) {
+          infoTxt.visible=false;
+          infoTxt.geometry.dispose();
+          infoTxt.material.dispose();
+        }
+
+        //Crear el nuevo texto y añadirlo a la escena
+        createText(newText,infoBtn.position.x - 0.3,infoBtn.position.y - 0.02,infoBtn.position.z + 0.05,(newTextMesh) => {
+            infoTxt = newTextMesh; // Actualizar referencia
+            scene.add(infoTxt);
+          }
+        );
+      }
+
+      function deactivateButton(button) {
+        button.visible = false; // Ocultar el botón de la escena
+        button.userData.active = false; // Desactivar colisiones al establecer "active" en falso
         
+        if (startBtn) {
+          scene.remove(startBtn);
+          startTxt.visible = false;
+          scene.remove(startTxt);
+        }
+        if (recordBtn) {
+          scene.remove(recordBtn);
+          recordTxt.visible = false;
+          scene.remove(recordTxt);
+        }
+        if (stopRecordBtn) {
+          scene.remove(stopRecordBtn);
+          stopRecordTxt.visible = false;
+          scene.remove(stopRecordTxt);
+        }
+        if (sendBtn) {
+          scene.remove(sendBtn);
+          sendTxt.visible = false;
+          scene.remove(sendTxt);
+        }
+      }
+
+      function render() {
+        renderer.render(scene, camera);
+      }
+      function playAudio() {
+        deactivateButton(startBtn);
+        // Reproducir el primer audio (Crea1)
+        let audio1 = new Audio("./audios/Crea1.mp3");
+        audio1.play();
+
         // Al terminar el primer audio (Crea1), reproducir el segundo audio (Crea2)
-        audio1.addEventListener('ended', function () {
+        audio1.addEventListener("ended", function () {
           console.log("Crea1 ha terminado. Reproduciendo Crea2...");
-          let audio2 = new Audio('./audios/Crea2.mp3');
+          let audio2 = new Audio("./audios/Crea2.mp3");
           audio2.play();
-          //moverModelo3D();
 
           // Al terminar el segundo audio (Crea2), reproducir el tercer audio (Vendedor)
-          audio2.addEventListener('ended', function () {
+          audio2.addEventListener("ended", function () {
             console.log("Crea2 ha terminado. Reproduciendo Vendedor...");
-            
-            let audio3 = new Audio('./audios/Vendedor-ws.mp3');
+
+            let audio3 = new Audio("./audios/Vendedor-3.mp3");
             audio3.play();
+            //loadFBXModel();
             // Puedes seguir añadiendo más eventos "ended" si necesitas reproducir más audios en secuencia
-            audio3.addEventListener('ended', function () {
+            audio3.addEventListener("ended", function () {
               console.log("Vendedor ha terminado. Reproduciendo Cliente");
-              let audio4 = new Audio('./audios/Cliente-1.mp3');
+              let audio4 = new Audio("./audios/Cliente-1.mp3");
               audio4.play();
-             
-              audio4.addEventListener('ended', function () {
-                console.log("Cliente ha terminado. Reproduciendo Crea3")
-                let audio5 = new Audio('./audios/Crea3-1.mp3');
+
+              audio4.addEventListener("ended", function () {
+                console.log("Cliente ha terminado. Reproduciendo Crea3");
+                let audio5 = new Audio("./audios/Crea3-2.mp3");
                 audio5.play();
 
-                audio5.addEventListener('ended', function () {
+                audio5.addEventListener("ended", function () {
+                  if (music.isPlaying) {
+                    music.stop(); // Detener el audio si está reproduciéndose
+                  }
                   showButtons();
                 });
               });
@@ -143,192 +499,178 @@
           });
         });
       }
-      
-      function actualizarResultado(texto) {        
-        resultadoText.setAttribute('value', texto); // Actualiza el texto dentro del box con id="resultado"
-      }
-      
-      function startEvent1(){
-        reproducirAudio('./audios/Crea1.mp3');
-        //modelo.setAttribute("visible", "true");
-      }
-
-      function showButtons() {
-       
-        // document.getElementById("grabar").setAttribute("visible", "true");
-        // document.querySelector('a-text[value="Grabar"]').setAttribute("visible", "true");
-
-        // document.getElementById("stop").setAttribute("visible", "true");
-        // document.querySelector('a-text[value="Detener"]').setAttribute("visible", "true");
-
-        // document.getElementById("transcribir").setAttribute("visible", "true");
-        // document.querySelector('a-text[value="Transcribir"]').setAttribute("visible", "true");
-
-        // document.getElementById("resultado").setAttribute("visible", "true");
-        // document.querySelector('a-text[value="Resultado"]').setAttribute("visible", "true");
-
-        
-        grabarButton.setAttribute("visible", "true");
-        document.querySelector('a-text[value="Grabar"]').setAttribute("visible", "true");
-        grabarButton.classList.add("collidable");
-
-        stopButton.setAttribute("visible", "true");
-        document.querySelector('a-text[value="Detener"]').setAttribute("visible", "true");
-        stopButton.classList.add("collidable");
-
-        // let transcribirButton = document.getElementById("transcribir");
-        // transcribirButton.setAttribute("visible", "true");
-        // document.querySelector('a-text[value="Transcribir"]').setAttribute("visible", "true");
-        // transcribirButton.classList.add("collidable");
-        resultadoText.setAttribute("value", "Resultado");
-        document.getElementById("resultado").setAttribute("visible", "true");
-        resultadoText.setAttribute("visible","true");
-        transcribirButton.setAttribute("visible", "false");
-        transcribirButton.classList.remove("collidable");
-        document.querySelector('a-text[value="Enviar"]').setAttribute("visible", "false");
-
-        evento1Button.setAttribute("visible", "false");
-        document.querySelector('a-text[value="Iniciar"]').setAttribute("visible", "false");
-        evento1Button.classList.remove("collidable");
-      }
-
-      function hideButtons() {
-      // Remover la clase "collidable" para que el raycaster no los detecte
-
-      grabarButton.setAttribute("visible", "false");
-      document.querySelector('a-text[value="Grabar"]').setAttribute("visible", "true");
-      grabarButton.classList.remove("collidable");
-
-      stopButton.setAttribute("visible", "false");
-      document.querySelector('a-text[value="Detener"]').setAttribute("visible", "true");
-      stopButton.classList.remove("collidable");
-    }
 
       async function grabar() {
+        audioChunks = [];
 
-        // actualizarResultado('Grabación iniciada...');
-        audioChunks =[];
-            
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder = new MediaRecorder(stream);
 
-            mediaRecorder.ondataavailable = event => {
-                audioChunks.push(event.data);
-            };
+        mediaRecorder.ondataavailable = (event) => {
+          audioChunks.push(event.data);
+        };
 
-            mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                const formData = new FormData();
-                formData.append('audio', audioBlob);
+        mediaRecorder.onstop = () => {
+          const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+          const formData = new FormData();
+          formData.append("audio", audioBlob);
 
-                // Enviar audio al servidor
-                fetch('https://flask-idenpala-1fe342925a36.herokuapp.com/grabar', {
-                  method: 'POST',
-                  body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'grabacion_completada') {
-                      // document.getElementById("grabar").setAttribute("visible", "false");
-                      // document.querySelector('a-text[value="Grabar"]').setAttribute("visible", "false");
-                      console.log ("Grabacion enviada para procesamiento");
-                      actualizarResultado('Grabacion Finalizada');
-                      
-                    } else {
-                      console.log("Error en la grabación.");
-                      //actualizarResultado('Error en la grabación.');
-                    }
-                });
-            };
+          // Enviar audio al servidor
+          fetch("https://flask-idenpala-1fe342925a36.herokuapp.com/grabar", {
+            method: "POST",
+            body: formData,
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.status === "grabacion_completada") {
+                console.log("Grabacion enviada para procesamiento");
+              } else {
+                console.log("Error en la grabación.");
+              }
+            });
+        };
 
-            mediaRecorder.start();
-            actualizarResultado('Grabacion iniciada');
-            console.log("Grabación iniciada...");
+        mediaRecorder.start();
+        updateInfoText("Grabando");
+        console.log("Grabación iniciada...");
       }
 
       function detener() {
         console.log("Detener grabación");
         mediaRecorder.stop();
-        actualizarResultado('Grabacion detenida');
-        transcribirButton.setAttribute("visible", "true");
-        document.querySelector('a-text[value="Enviar"]').setAttribute("visible", "true");
-        transcribirButton.classList.add("collidable");
-        hideButtons();
+        deactivateButton(recordBtn);
+        deactivateButton(stopRecordBtn);
+        updateInfoText("Grabacion detenida");
+        showSendButton();
       }
 
       function transcribir() {
-        
         console.log("Iniciar transcripción");
-        actualizarResultado('Analizando');
+        updateInfoText("Analizando");
         let resultado;
-        
-        fetch('https://flask-idenpala-1fe342925a36.herokuapp.com/transcribir', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                      let textoReconocido = `Texto reconocido: ${data.texto_reconocido}`;
-                      resultado = `Resultado: ${data.resultado}`;
-                      //actualizarResultado(`${textoReconocido}\n${resultado}`);
 
-                      console.log(data.texto_reconocido);
-                      console.log(data.resultado);
-                      console.log("ESTE ES EL RESULTADO"+resultado);
-                      if (data.resultado == "Correcto"){
-                        console.log("Reproducinedo correcto ")
-                        let audio6 = new Audio('./audios/Crea4.mp3');
-                        audio6.play();
-                        transcribirButton.setAttribute("visible", "false");
-                        transcribirButton.classList.remove("collidable");
-                        document.querySelector('a-text[value="Enviar"]').setAttribute("visible", "false");
-                      }
-                      else if(data.resultado == 'Incorrecto'){
-                        console.log("Reproducinedo incorrecto ")
-                        let audio7 = new Audio('./audios/Crea5.mp3');
-                        audio7.play();
-                        showButtons();
-                        transcribirButton.setAttribute("visible", "false");
-                        transcribirButton.classList.remove("collidable");
-                        document.querySelector('a-text[value="Enviar"]').setAttribute("visible", "false");
-                      }
-                    } else {
-                        console.log(data.message);
-                        //actualizarResultado(`Error: ${data.message}`);
-                    }
-                 
-                });
+        fetch("https://flask-idenpala-1fe342925a36.herokuapp.com/transcribir", {
+          method: "POST",
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.status === "success") {
+              let textoReconocido = `Texto reconocido: ${data.texto_reconocido}`;
+              resultado = `Resultado: ${data.resultado}`;
+              //actualizarResultado(`${textoReconocido}\n${resultado}`);
+
+              console.log(data.texto_reconocido);
+              console.log(data.resultado);
+              console.log("ESTE ES EL RESULTADO" + resultado);
+              if (data.resultado == "Correcto") {
+                intentosCorrectos++;
+                if(intentosCorrectos == 1){
+                  console.log("Reproduciendo correcto ");
+                  let audio6 = new Audio("./audios/Creacorrecto-2.mp3");
+                  audio6.play();                                
+                  deactivateButton(sendBtn);
+                  audio6.addEventListener("ended", function () {
+                  console.log("Este es el score: "+score);
+                    deactivateButton(sendBtn);
+                    showButtons();
+                  });
+                }
+                else if (intentosCorrectos == 2){
+                  console.log("Reproduciendo correcto ");
+                  let audio8 = new Audio("./audios/Crea4.mp3");
+                  audio8.play();                                
+                  deactivateButton(sendBtn);
+                  audio8.addEventListener("ended", function () {
+                  console.log("Este es el score: "+score);
+                  const queryString = window.location.search;                
+                  const redirectUrl =
+                    "https://topbosi.web.app/bosi/index.html" +
+                    queryString +
+                    "&title=Triada del crecimiento comercial: 2 Atención&score=" + score;
+
+                  setTimeout(function () {
+                    window.location.href = redirectUrl;
+                  }, 100);
+                  });
+                }                
+              } else if (data.resultado == "Incorrecto") {
+                intentos--; 
+                if(intentos ==2){                  
+                  score -= 5;
+                  console.log("Reproduciendo incorrecto ");
+                  let audio7 = new Audio("./audios/Creaincorrecto-1.mp3");
+                  audio7.play();                                
+                  deactivateButton(sendBtn);
+                  audio7.addEventListener("ended", function () {
+                  console.log("Este es el score: "+score);
+                    showButtons();
+                  });
+                }
+                else if (intentos ==  1){
+                  score -= 5;
+                  console.log("Reproduciendo incorrecto ");
+                  let audio9 = new Audio("./audios/Creaincorrecto-2.mp3");
+                  audio9.play();                                
+                  deactivateButton(sendBtn);
+                  audio9.addEventListener("ended", function () {
+                  console.log("Este es el score: "+score);
+                    showButtons();
+                  });
+                }
+                else if (intentos == 0){
+                  score -= 10;
+                  updateInfoText("Intentos superados")
+                  let audio10 = new Audio("./audios/Creaincorrecto-3.mp3");
+                  audio10.play();                                
+                  deactivateButton(sendBtn);
+                  audio10.addEventListener("ended", function () {
+                  console.log("Este es el score: "+score);
+                  const queryString = window.location.search;                
+                  const redirectUrl =
+                    "https://topbosi.web.app/bosi/index.html" +
+                    queryString +
+                    "&title=Triada del crecimiento comercial: 2 Atención&score=" + score;
+
+                  setTimeout(function () {
+                    window.location.href = redirectUrl;
+                  }, 100);
+                  });
+                }
+                // else {
+                //   deactivateButton(sendBtn);
+                //   showButtons();
+                // }
+                //console.log("Este es el score: "+score)
+              }
+              else{
+                deactivateButton(sendBtn);
+                showButtons();
+              }
+            } else {
+              console.log(data.message);
+              deactivateButton(sendBtn);
+              showButtons();
+              //actualizarResultado(`Error: ${data.message}`);
+            }
+          });
       }
 
-      function setupRaycasterComponent(buttonId, action) {
-        let intersected = false;
-        let timer;
-
-        AFRAME.registerComponent(buttonId + '-listener', {
-          init: function () {
-            let el = this.el;
-            el.addEventListener('raycaster-intersected', function () {
-              if (!intersected) {
-                intersected = true;
-                timer = setTimeout(() => {
-                  action(); // Ejecuta la acción pasada como argumento
-                }, 3000); // 3 segundos de espera
-              }
+      // Agregar un evento al botón para solicitar permisos de micrófono y luego iniciar Three.js
+      document
+        .getElementById("initButton")
+        .addEventListener("click", async () => {
+          try {
+            // Solicitar permisos de uso del micrófono
+            stream = await navigator.mediaDevices.getUserMedia({
+              audio: true,
             });
-
-            el.addEventListener('raycaster-intersected-cleared', function () {
-              intersected = false;
-              clearTimeout(timer); // Detiene el temporizador si se quita el cursor
-            });
+            // Si los permisos son concedidos, iniciar Three.js
+            init();
+          } catch (error) {
+            alert(
+              "Se requieren permisos de micrófono para usar esta aplicación."
+            );
           }
         });
-
-        document.getElementById(buttonId).setAttribute(buttonId + '-listener', '');
-      }
-
-      setupRaycasterComponent('evento1', startEvent1);
-      setupRaycasterComponent('grabar', grabar);
-      setupRaycasterComponent('stop', detener);
-      setupRaycasterComponent('transcribir', transcribir);
-      
     </script>
   </body>
 </html>
